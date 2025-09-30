@@ -9,16 +9,12 @@
   will-change: filter;
   transform: translateZ(0);
   backface-visibility: hidden;
-  /* 회색 (#D5D5D5) 필터 */
-  filter: invert(84%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%)
-    contrast(100%);
 }
 
 /* 활성/호버 시 브랜드 색 (#4561DB) */
 .nav-item.active .nav-icon,
 .nav-item:hover .nav-icon {
-  filter: invert(36%) sepia(94%) saturate(3547%) hue-rotate(228deg)
-    brightness(87%) contrast(86%);
+  filter: invert(34%) sepia(98%) saturate(1200%) hue-rotate(210deg) brightness(90%) contrast(90%);
 }
 
 /* 바텀 네비게이션 바 */
