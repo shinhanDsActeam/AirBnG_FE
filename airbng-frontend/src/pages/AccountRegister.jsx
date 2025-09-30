@@ -63,9 +63,9 @@ export default function AccountRegister() {
   // 뒤로가기
   const handleBack = () => {
     if (hasReservationState) {
-      navigate(-1);
+      navigate("/page/mypage/wallet/charge", { replace: true });
     } else {
-      navigate("/page/mypage/wallet");
+      navigate("/page/mypage/wallet", { replace: true });
     }
   };
 

@@ -108,10 +108,11 @@ export default function WalletCharge() {
   const handleBack = () => {
     // 예약 상태가 저장되어 있는 경우 예약 페이지로 돌아감
     const hasReservationState = sessionStorage.getItem("reservationState");
-    if (hasReservationState) {
-      navigate(-1);
+    const lockerId = JSON.parse(hasReservationState)?.lockerId;
+    if (lockerId) {
+      navigate(`/page/reservations/form?lockerId=${lockerId}`, { replace: true });
     } else {
-      navigate("/page/mypage/wallet");
+      navigate("/page/mypage", { replace: true });
     }
   };
   // 계좌 등록 페이지로 이동하는 함수 추가
