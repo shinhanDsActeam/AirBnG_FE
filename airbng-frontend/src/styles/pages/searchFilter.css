@@ -65,6 +65,7 @@
     padding: 20px;
     background-color: #ffffff;
     height: 100vh;
+    overflow-y: auto;
 }
 
 .search-filter-header-title {
@@ -148,15 +149,34 @@
 
 /* 검색 순위 */
 .search-ranking {
-    padding: 40px;
+    padding: 32px 16px 24px 16px;
     background-color: #ffffff;
-    flex: 1;
-    overflow-y: auto;
+    flex: 1 1 auto;
+    /* overflow-y: auto; */
+    min-height: 0;
+    max-height: 300px; /* 모바일에서 4개가 다 보이도록 적절히 조정 */
+    box-sizing: border-box;
+}
 
+@media (max-width: 480px) {
+    .search-filter-page-container {
+        height: 122vh;
+    }
+    .search-ranking {
+        padding: 24px 8px 16px 8px;
+        max-height: 180px; /* 더 작은 화면에서 높이 조정 */
+    }
+    .filter-row {
+        gap: 5px
+    }
+    .filter-row > .search-dropdown-wrapper {
+        border-top: 1px solid #f0f0f0;
+    }
 }
 
 .ranking-title {
-    margin-bottom: 40px;
+    margin-top: 10px;
+    margin-bottom: 25px;
     color: #333;
     font-size: 20px;
     font-style: normal;
@@ -167,14 +187,17 @@
 .ranking-list {
     display: flex;
     flex-direction: column;
-    gap: 25px;
+    gap: 18px;
+    margin: 0;
+    padding: 0;
 }
 
 .ranking-item {
     display: flex;
     align-items: center;
     cursor: pointer;
-    gap: 20px;
+    gap: 16px;
+    padding: 8px 0;
 }
 
 .ranking-content {
