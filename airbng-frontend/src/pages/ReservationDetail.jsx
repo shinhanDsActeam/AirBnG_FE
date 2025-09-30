@@ -5,6 +5,7 @@ import {
   getReservationDetail,
   confirmReservationApi,
   cancelReservationApi,
+  completeReservationApi,
 } from "../api/reservationApi";
 import Header from "../components/Header/Header";
 import { useAuth } from "../context/AuthContext";
@@ -300,6 +301,26 @@ const ReservationDetail = () => {
       );
     }
   };
+
+  function getCompleteBtnProps(reservation, userRole) {
+    const { state } = reservation;
+    if (state === "COMPLETED") {
+      return { disabled: true, label: "완료된 예약입니다" };
+    }
+    if (state === "CONFIRMED") {
+      return { disabled: false, label: "예약 완료 되셨나요?" };
+    }
+    if (state === "COMPLETING_DROPPER_ONLY") {
+      if (userRole === "host") return { disabled: false, label: "예약 완료 되셨나요?" };
+      if (userRole === "customer") return { disabled: true, label: "상대방의 완료 확인 대기중" };
+    }
+    if (state === "COMPLETING_KEEPER_ONLY") {
+      if (userRole === "customer") return { disabled: false, label: "예약 완료 되셨나요?" };
+      if (userRole === "host") return { disabled: true, label: "상대방의 완료 확인 대기중" };
+    }
+    return { disabled: true, label: "" };
+  }
+
   return (
     <div className={styles.reservationDetail}>
       {isFromReservation && <Header headerTitle="예약 상세" showHomeButton />}
@@ -429,6 +450,63 @@ const ReservationDetail = () => {
           console.log("예약 상태:", reservationState);
           console.log("data: ", data);
 
+          // 완료대기/완료 상태 버튼 처리
+          if (
+            reservationState === "CONFIRMED" ||
+            reservationState === "COMPLETING_DROPPER_ONLY" ||
+            reservationState === "COMPLETING_KEEPER_ONLY" ||
+            reservationState === "COMPLETED"
+          ) {
+            // 역할 구분
+            let btnProps = { disabled: true, label: "" };
+            if (reservationState === "COMPLETED") {
+              btnProps = { disabled: true, label: "완료된 예약입니다" };
+            } else if (reservationState === "CONFIRMED") {
+              btnProps = { disabled: false, label: "예약 완료 되셨나요?" };
+            } else if (reservationState === "COMPLETING_DROPPER_ONLY") {
+              if (userRole === "keeper")
+                btnProps = { disabled: false, label: "예약 완료 되셨나요?" };
+              if (userRole === "dropper")
+                btnProps = { disabled: true, label: "상대방의 완료 확인 대기중" };
+            } else if (reservationState === "COMPLETING_KEEPER_ONLY") {
+              if (userRole === "dropper")
+                btnProps = { disabled: false, label: "예약 완료 되셨나요?" };
+              if (userRole === "keeper")
+                btnProps = { disabled: true, label: "상대방의 완료 확인 대기중" };
+            }
+
+            return (
+              <div className={styles.actionButtons} style={{ justifyContent: "center" }}>
+                <button
+                  className={btnProps.disabled ? styles.btnDisabled : styles.btnConfirm}
+                  disabled={btnProps.disabled}
+                  style={{ width: "100%" }}
+                  onClick={async () => {
+                    if (!btnProps.disabled) {
+                      // 완료 확인 API 호출
+                      const response = await completeReservationApi(data.reservationId);
+                      if (response.data.code === 1000) {
+                        setReservationData((prevData) => ({
+                          ...prevData,
+                          state: response.data.result.state,
+                        }));
+                        showSuccess(
+                          "예약 완료 처리되었습니다!",
+                          "",
+                          () => navigate("/page/reservations/list")
+                        );
+                      } else {
+                        showError("예약 완료 처리에 실패했습니다.", response.data.message);
+                      }
+                    }
+                  }}
+                >
+                  {btnProps.label}
+                </button>
+              </div>
+            );
+          }
+
           if (reservationState === "PENDING") {
             console.log("userRole:", userRole);
             // PENDING 상태: keeper는 거절/승인, dropper는 취소
@@ -488,41 +566,6 @@ const ReservationDetail = () => {
                 >
                   {userRole === "keeper" ? "예약이 취소됐어요" : "예약취소완료"}
                 </button>
-              </div>
-            );
-          } else if (reservationState === "CONFIRMED") {
-            // CONFIRMED 상태: keeper는 예약승인완료, dropper는 예약이 승인됐어요 + 취소 버튼
-            return (
-              <div
-                className={styles.actionButtons}
-                style={userRole === "keeper" ? { justifyContent: "center" } : {}}
-              >
-                {userRole === "keeper" ? (
-                  <button
-                    className={styles.btnDisabled}
-                    disabled
-                    style={{ width: "100%" }}
-                  >
-                    예약승인완료
-                  </button>
-                ) : userRole === "dropper" ? (
-                  <>
-                    <button
-                      className={styles.btnDisabled}
-                      disabled
-                      style={{ flex: 2 }}
-                    >
-                      예약이 승인됐어요
-                    </button>
-                    <button
-                      className={styles.btnCancel}
-                      onClick={handleCancelWithFeeConfirm}
-                      style={{ flex: 1 }}
-                    >
-                      취소
-                    </button>
-                  </>
-                ) : null}
               </div>
             );
           } else if (reservationState === "REJECTED") {
