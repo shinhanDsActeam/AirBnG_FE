@@ -115,6 +115,8 @@ ReservationListNew CSS Module .reservationListNew {
     box-shadow: none;
     min-height: 100dvh;
     max-width: 100vw;
+
+    background: white;
   }
   .contentNew {
     padding: 12px 8px;
@@ -138,6 +140,9 @@ ReservationListNew CSS Module .reservationListNew {
   .tabNew {
     font-size: 14px;
     padding: 10px 0;
+  }
+  .roleSelector{
+    margin-top:10px;
   }
 }
 
@@ -183,8 +188,6 @@ ReservationListNew CSS Module .reservationListNew {
   position: sticky;
   top: 57px;
   z-index: 95;
-  /* border-bottom: 1px solid #e5e7eb; */
-  margin-top: 10px;
 }
 
 .roleSelectorContent {
