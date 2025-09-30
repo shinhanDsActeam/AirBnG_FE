@@ -1,10 +1,10 @@
-import { Client } from '@stomp/stompjs';
-import SockJS from 'sockjs-client';
-import { getAccessToken } from './jwtUtil';
+import { Client } from "@stomp/stompjs";
+import SockJS from "sockjs-client";
+import { getAccessToken } from "./jwtUtil";
 
 let client;
 
-// 간단 이벤트 버스
+// simple event bus
 const listeners = {
   connect: new Set(),
   disconnect: new Set(),
@@ -12,22 +12,28 @@ const listeners = {
 };
 
 function emit(type, payload) {
-  if (!listeners[type]) return;
-  listeners[type].forEach(fn => { try { fn(payload); } catch {} });
+  listeners[type]?.forEach((fn) => {
+    try {
+      fn(payload);
+    } catch {}
+  });
 }
 
 export function onStomp(type, fn) {
-  if (!listeners[type]) throw new Error('Unknown STOMP event: ' + type);
-  listeners[type].add(fn);
-  return () => listeners[type].delete(fn);
+  listeners[type]?.add(fn);
+  return () => listeners[type]?.delete(fn);
 }
 
 export function getStompClient() {
   if (client) return client;
 
+  const API_BASE = process.env.REACT_APP_API_BASE_URL || "/api";
+  const WS_PATH = `${API_BASE.replace(/\/$/, "")}/ws-chat`;
+  //로그 추가
+  console.log("경로 확인 용도 " + WS_PATH);
   client = new Client({
-    webSocketFactory: () => new SockJS(process.env.REACT_APP_WS_URL),
-    reconnectDelay: 5000,       // 기본값 (useStomp에서 토큰 없으면 0으로 바꿈)
+    webSocketFactory: () => new SockJS(WS_PATH),
+    reconnectDelay: 5000,
     heartbeatIncoming: 10000,
     heartbeatOutgoing: 10000,
     // debug: (s) => console.debug('[STOMP]', s),
@@ -38,30 +44,36 @@ export function getStompClient() {
     beforeConnect: () => {
       const t = getAccessToken();
       client.connectHeaders = t ? { Authorization: `Bearer ${t}` } : {};
-      // 여기서 예외 던지지 않음: 루프 방지
     },
-    onConnect: (frame) => { emit('connect', frame); },
-    onStompError: (frame) => { console.warn('[STOMP] error', frame); emit('error', frame); },
-    onWebSocketError: (ev) => { console.warn('[STOMP] ws error', ev); emit('error', ev); },
-    onWebSocketClose: () => { emit('disconnect'); },
-    onDisconnect: (frame) => { emit('disconnect', frame); },
+    onConnect: (frame) => {
+      // console.log('[STOMP] connected');
+      emit("connect", frame);
+    },
+    onStompError: (frame) => {
+      console.warn("[STOMP] error", frame);
+      emit("error", frame);
+    },
+    onWebSocketError: (ev) => {
+      console.warn("[STOMP] ws error", ev);
+      emit("error", ev);
+    },
+    onWebSocketClose: () => {
+      emit("disconnect");
+    },
+    onDisconnect: (frame) => {
+      emit("disconnect", frame);
+    },
   });
 
   return client;
 }
 
-// 로그인/리프레시/로그아웃 시 호출
+// 토큰 갱신 시 (로그인/리프레시)
 export async function updateStompToken(newToken) {
   const c = getStompClient();
   c.connectHeaders = newToken ? { Authorization: `Bearer ${newToken}` } : {};
-  if (!newToken) {
-    // 로그아웃: 재연결 끄고 즉시 종료
-    c.reconnectDelay = 0;
-    if (c.active) await c.deactivate();
-    return;
+  if (c.active) {
+    await c.deactivate();
+    c.activate();
   }
-  // 로그인/재로그인
-  c.reconnectDelay = 5000;
-  if (c.active) await c.deactivate();
-  c.activate();
 }
